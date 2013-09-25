@@ -8,6 +8,31 @@
  * Version: 1.0
 */
 
+add_action( 'init', 'twikin_game_taxonomies' );
+function twikin_game_taxonomies(){
+
+    register_taxonomy('kind', 'attachment:game', array(
+        'labels' => array(
+            'name' => __( 'Type de jeu' ),
+            'singular_name' => __( 'Type de jeu' ),
+            'search_items' => __( 'Chercher dans les types de jeu' ),
+            'popular_items' => null,
+            'all_items' => __( 'Tous les types de jeu' ),
+            'edit_item' => __( 'Éditer le type de jeu' ),
+            'update_item' => __( 'Mettre à jour le type de jeu' ),
+            'add_new_item' => __( 'Ajouter un nouveau type de jeu' ),
+            'new_item_name' => __( 'Nom du nouveau type de jeu' ),
+            'separate_items_with_commas' => null,
+            'add_or_remove_items' => null,
+            'choose_from_most_used' => null,
+        ),
+        'hierarchical' => true,
+        'rewrite' => array( 'slug' => 'type' ),
+        'show_admin_column' => true,
+    ));
+    
+}
+
 // ajouter un nouveau type de média
 add_filter( 'post_mime_types', 'twikin_add_game_mime_type');
 function twikin_add_game_mime_type($mimes){
@@ -86,7 +111,6 @@ function twikin_addgame_menu_page(){
 	            });
 	            function callApi(){
 	                $.get(ajaxurl, {action: 'twikin-api', search: $('#twikin-title').val()}, function(data){
-	                    console.log(data);
 	                    if(data.error) {
 	                        $('#twikin-api-result').text('Erreur : '+data.error);
 	                    } else {
@@ -104,15 +128,15 @@ function twikin_addgame_menu_page(){
 	                                
 	                                $('#twikin-api-result').append(item);
 	                            }
+	                        } else {
+	                            $('#twikin-api-result').text('Aucun résultat');
 	                        }
 	                    }
 	                });
 	            }
 	            
 	            $('#twikin-api-result').on('click', '.twikin-add-game', function(e){
-	                $.post(ajaxurl, {action: 'twikin-add', gameid: $(e.currentTarget).attr('data-twikinid')}, function(data){
-	                    console.log(data);
-	                });
+	                $.post(ajaxurl, {action: 'twikin-add', gameid: $(e.currentTarget).attr('data-twikinid')});
 	                return false;
 	            });
 	        });
@@ -144,6 +168,7 @@ function twikin_add_game(){
         if(property_exists($response, 'success') && $response->success){
             
             $user = wp_get_current_user();
+            
             $game = array(
                 'post_title' => $response->name,
                 'post_content' => $response->description,
@@ -153,6 +178,15 @@ function twikin_add_game(){
                 'post_status' => 'inherit',
                 'guid' => 'http://www.twikin.fr/jeux/'.$response->id,
             );
+            
+            if(property_exists($response, 'kind_name')){
+                $kind = get_term_by('name', $response->kind_name, 'kind');
+                if(!$kind ){
+                    $term = wp_insert_term($response->kind_name, 'kind');
+                    $kind = get_term($term['term_id'], 'kind');
+                }
+                $game['tax_input'] = array('kind' => array($kind->term_id));
+            }
             
             // ajouter le jeu en base
             $id = wp_insert_post($game);
