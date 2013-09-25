@@ -46,3 +46,54 @@ function twikin_reset_icon_dir($in){
     return $in;
 }
 
+add_action('admin_menu', 'twikin_setup_addgame_menu');
+function twikin_setup_addgame_menu(){
+    add_media_page('Ajouter un jeu', 'Ajouter un jeu', 'upload_files', 'twikin_addgame', 'twikin_addgame_menu_page');
+}
+function twikin_addgame_menu_page(){
+    ?><div class="wrap">
+	    <?php screen_icon(); ?>
+	    <h2>Ajouter un jeu</h2>
+	    <form method="post" action="<?php echo admin_url('upload.php?page=twikin_addgame'); ?>">
+	        <label>Titre:<input id="twikin-title" value="" type="text" /></label>
+	        <div id="twikin-api-result"></div>
+	    </form>
+	    <script>
+	        jQuery(function($){
+	            var timer;
+	            $('#twikin-title').keyup(function(e){
+	                clearTimeout(timer);
+	                timer = setTimeout(callApi, 1000);
+	            });
+	            function callApi(){
+	                $.get(ajaxurl, {action: 'twikin-api', search: $('#twikin-title').val()}, function(data){
+	                    console.log(data);
+	                    if(data.error) {
+	                        $('#twikin-api-result').text('Erreur : '+data.error);
+	                    } else {
+	                        if(data.results && data.results.length){
+	                            $('#twikin-api-result').html('<ol></ol>');
+	                            for(r in data.results){
+	                                $('#twikin-api-result').append('<li><a target="_blank" href="http://www.twikin.fr/jeux/'+data.results[r].id+'"><img src="'+data.results[r].media_url+'"/> '+data.results[r].name+'</a></li>');
+	                            }
+	                        }
+	                    }
+	                });
+	            }
+	        });
+	    </script>
+	</div><?php
+}
+
+add_action('wp_ajax_twikin-api', 'twikin_api_call');
+function twikin_api_call(){
+    $response = wp_remote_get('http://www.twikin.fr/api/game/search/'.$_GET['search']);
+    if(!is_wp_error($response)){
+        header('Content-type: application/json');
+        echo $response['body'];
+    } else {
+        print_r($response);
+    }
+    die();
+}
+
