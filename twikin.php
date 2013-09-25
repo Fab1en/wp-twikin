@@ -64,6 +64,21 @@ function twikin_display_thumbnail(){
     }
 }
 
+add_action('add_meta_boxes', 'twikin_infos_box', 10, 2);
+function twikin_infos_box($post_type, $post){
+    if($post->post_mime_type == 'game/twikin'){
+        add_meta_box('twikin_infos', 'Fiche technique', 'twikin_infos_box_inside', 'attachment', 'side', 'high');
+    }
+}
+function twikin_infos_box_inside($post){
+    $infos = get_post_meta($post->ID, 'twikin', true);
+    ?>
+        <div class="misc-pub-section">joueurs: <strong><?php echo $infos->min_players; ?>-<?php echo $infos->max_players; ?></strong></div>
+        <div class="misc-pub-section">temps: <strong><?php echo $infos->length; ?> min</strong></div>
+        <div class="misc-pub-section">age: <strong><?php echo $infos->min_age; ?> et +</strong></div>
+    <?php
+}
+
 // définir l'icône
 add_filter('wp_mime_type_icon', 'twikin_game_icon', 10, 3);
 function twikin_game_icon($icon, $mime, $post_id){
