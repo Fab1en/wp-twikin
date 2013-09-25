@@ -25,24 +25,41 @@ add_filter('wp_mime_type_icon', 'twikin_game_icon', 10, 3);
 function twikin_game_icon($icon, $mime, $post_id){
     
     if($mime == 'game/twikin') {
-        // TODO: gérer l'affichage de la miniature par défaut
-        $icon = plugins_url('img/default-game.png', __FILE__);
+    
+        // tester s'il existe un fichier image attaché
+        $image = get_post_meta($post_id, '_wp_attachment_metadata', true);
+        if(isset($image['sizes']) && isset($image['sizes']['thumbnail'])){
+            $image = $image['sizes']['thumbnail']['file'];
+        }
         
-        // hack pour passer le test d'existance de l'icône
-        add_filter('icon_dir', 'twikin_icon_dir');
+        if($image){
+            $icon = $image;
+            // hack pour passer le test d'existance de l'icône
+            add_filter('icon_dir', 'twikin_icon_dir_url');
+        } else {
+            // miniature par défaut
+            $icon = plugins_url('img/default-game.png', __FILE__);
+            
+            // hack pour passer le test d'existance de l'icône
+            add_filter('icon_dir', 'twikin_icon_dir_plugin');
+        }
     }
     return $icon;
 }
 
 // hack pour passer le test d'existance de l'icône
-function twikin_icon_dir($path){
+function twikin_icon_dir_plugin($path){
     return plugin_dir_path(__FILE__).'img';
+}
+function twikin_icon_dir_url($path){
+    return 'http://www.twikin.fr/medias/image/1/3/2';
 }
 
 // supprimer le hack pour passer le test d'existance de l'icône
 add_filter('wp_get_attachment_image_attributes', 'twikin_reset_icon_dir');
 function twikin_reset_icon_dir($in){
-    remove_filter('icon_dir', 'twikin_icon_dir');
+    remove_filter('icon_dir', 'twikin_icon_dir_plugin');
+    remove_filter('icon_dir', 'twikin_icon_dir_url');
     return $in;
 }
 
@@ -61,9 +78,11 @@ function twikin_addgame_menu_page(){
 	    <script>
 	        jQuery(function($){
 	            var timer;
-	            $('#twikin-title').keyup(function(e){
+	            $('#twikin-title').on('keyup change input', function(e){
 	                clearTimeout(timer);
-	                timer = setTimeout(callApi, 1000);
+	                if($(e.currentTarget).val().length > 2) {
+	                    timer = setTimeout(callApi, 1000);
+	                }
 	            });
 	            function callApi(){
 	                $.get(ajaxurl, {action: 'twikin-api', search: $('#twikin-title').val()}, function(data){
@@ -74,12 +93,28 @@ function twikin_addgame_menu_page(){
 	                        if(data.results && data.results.length){
 	                            $('#twikin-api-result').html('<ol></ol>');
 	                            for(r in data.results){
-	                                $('#twikin-api-result').append('<li><a target="_blank" href="http://www.twikin.fr/jeux/'+data.results[r].id+'"><img src="'+data.results[r].media_url+'"/> '+data.results[r].name+'</a></li>');
+	                                var item;
+	                                item = '<li>';
+	                                item += '<a target="_blank" href="http://www.twikin.fr/jeux/'+data.results[r].id+'">';
+	                                item += '   <img src="'+data.results[r].media_url+'"/> ';
+	                                item +=     data.results[r].name;
+	                                item += '</a>';
+	                                item += '<button class="twikin-add-game" data-twikinid="'+data.results[r].id+'">Ajouter</button>';
+	                                item += '</li>';
+	                                
+	                                $('#twikin-api-result').append(item);
 	                            }
 	                        }
 	                    }
 	                });
 	            }
+	            
+	            $('#twikin-api-result').on('click', '.twikin-add-game', function(e){
+	                $.post(ajaxurl, {action: 'twikin-add', gameid: $(e.currentTarget).attr('data-twikinid')}, function(data){
+	                    console.log(data);
+	                });
+	                return false;
+	            });
 	        });
 	    </script>
 	</div><?php
@@ -87,10 +122,59 @@ function twikin_addgame_menu_page(){
 
 add_action('wp_ajax_twikin-api', 'twikin_api_call');
 function twikin_api_call(){
-    $response = wp_remote_get('http://www.twikin.fr/api/game/search/'.$_GET['search']);
+    $response = wp_remote_get('http://www.twikin.fr/api/game/search/'.$_REQUEST['search']);
     if(!is_wp_error($response)){
         header('Content-type: application/json');
         echo $response['body'];
+    } else {
+        print_r($response);
+    }
+    die();
+}
+
+add_action('wp_ajax_twikin-add', 'twikin_add_game');
+function twikin_add_game(){
+    // TODO commencer par chercher si le jeu existe déjà dans la Médiathèque ?
+    
+    // récupérer toutes les infos de Twikin
+    $response = wp_remote_get('http://www.twikin.fr/api/game/view/'.$_REQUEST['gameid']);
+    if(!is_wp_error($response)){
+    
+        $response = json_decode($response['body']);
+        if(property_exists($response, 'success') && $response->success){
+            
+            $user = wp_get_current_user();
+            $game = array(
+                'post_title' => $response->name,
+                'post_content' => $response->description,
+                'post_type' => 'attachment',
+                'post_mime_type' => 'game/twikin',
+                'post_author' => $user->ID,
+                'post_status' => 'inherit',
+                'guid' => 'http://www.twikin.fr/jeux/'.$response->id,
+            );
+            
+            // ajouter le jeu en base
+            $id = wp_insert_post($game);
+            if(!is_wp_error($id)){
+                $response->media_url = str_replace('https', 'http', $response->media_url);
+                // sauvegarder les informations supplémentaires
+                add_post_meta($id, 'twikin', $response);
+                add_post_meta($id, '_wp_attachment_metadata', array(
+                    'width' => 80,
+                    'height' => 80,
+                    'file' => $response->media_url,
+                    'sizes' => array(
+                        'thumbnail' => array(
+                            'width' => 80,
+                            'height' => 60,
+                            'file' => str_replace('c.80.80', '.80.60', $response->media_url),
+                        ),
+                    ),
+                ));
+            }
+        }
+        
     } else {
         print_r($response);
     }
