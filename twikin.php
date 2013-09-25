@@ -45,6 +45,25 @@ function twikin_add_game_mime_type($mimes){
     return $mimes;
 }
 
+add_action('edit_form_after_title', 'twikin_display_thumbnail');
+function twikin_display_thumbnail(){
+    if ( isset( $_GET['post'] ) )
+        $post = get_post((int) $_GET['post']);
+    elseif ( isset( $_POST['post_ID'] ) )
+     	$post = get_post((int) $_GET['post_ID']);
+     	
+    if($post && $post->post_mime_type == "game/twikin"){
+        // tester s'il existe un fichier image attaché
+        $image = get_post_meta($post->ID, '_wp_attachment_metadata', true);
+        if(isset($image['file'])){
+            echo '<img class="thumbnail" src="'.$image['file'].'" style="max-width:100%">';
+        }
+        
+        // lien vers la fiche Twikin
+        echo '<div><a href="'.$post->guid.'" target="_blank">voir la fiche sur Twikin</a></div>';
+    }
+}
+
 // définir l'icône
 add_filter('wp_mime_type_icon', 'twikin_game_icon', 10, 3);
 function twikin_game_icon($icon, $mime, $post_id){
@@ -195,9 +214,10 @@ function twikin_add_game(){
                 // sauvegarder les informations supplémentaires
                 add_post_meta($id, 'twikin', $response);
                 add_post_meta($id, '_wp_attachment_metadata', array(
-                    'width' => 80,
-                    'height' => 80,
-                    'file' => $response->media_url,
+                    'width' => 160,
+                    'height' => 160,
+                    'file' => str_replace('c.80.80', '.160.160', $response->media_url),
+                    // TODO: prendre la taille des miniatures dans les options
                     'sizes' => array(
                         'thumbnail' => array(
                             'width' => 80,
