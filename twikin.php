@@ -37,7 +37,7 @@ function twikin_game_taxonomies(){
 add_filter( 'post_mime_types', 'twikin_add_game_mime_type');
 function twikin_add_game_mime_type($mimes){
     $mimes['game/twikin'] = array(
-        'Jeu Twikin',
+        'Jeux',
         'Gérer les jeux Twikin',
         _n_noop( 'Jeu <span class="count">(%s)</span>', 'Jeux <span class="count">(%s)</span>' )
     );
@@ -120,6 +120,14 @@ function twikin_reset_icon_dir($in){
     remove_filter('icon_dir', 'twikin_icon_dir_plugin');
     remove_filter('icon_dir', 'twikin_icon_dir_url');
     return $in;
+}
+
+add_filter('wp_prepare_attachment_for_js', 'twikin_wpmedia_infos', 10, 3);
+function twikin_wpmedia_infos($response, $attachment, $meta){
+	if($attachment->post_mime_type == "game/twikin"){
+		$response['filename'] = $attachment->post_title;
+	}
+	return $response;
 }
 
 add_action('admin_menu', 'twikin_setup_addgame_menu');
