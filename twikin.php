@@ -251,7 +251,7 @@ function twikin_add_game(){
                 add_post_meta($id, '_wp_attachment_metadata', array(
                     'width' => 160,
                     'height' => 160,
-                    'file' => str_replace('c.80.80', '.160.160', $response->media_url),
+                    'file' => str_replace('c.80.80', '', $response->media_url),
                     // TODO: prendre la taille des miniatures dans les options
                     'sizes' => array(
                         'thumbnail' => array(
