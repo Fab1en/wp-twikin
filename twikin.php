@@ -36,7 +36,7 @@ function twikin_game_taxonomies(){
 // ajouter un nouveau type de média
 add_filter( 'post_mime_types', 'twikin_add_game_mime_type');
 function twikin_add_game_mime_type($mimes){
-    $mimes['game/twikin'] = array(
+    $mimes['game'] = array(
         'Jeux',
         'Gérer les jeux Twikin',
         _n_noop( 'Jeu <span class="count">(%s)</span>', 'Jeux <span class="count">(%s)</span>' )
@@ -128,6 +128,18 @@ function twikin_wpmedia_infos($response, $attachment, $meta){
 		$response['filename'] = $attachment->post_title;
 	}
 	return $response;
+}
+
+add_filter('media_send_to_editor', 'twikin_insert_game_into_post', 10, 3);
+function twikin_insert_game_into_post($html, $send_id, $attachment){
+	$post = get_post($send_id);
+	if($post->post_mime_type == 'game/twikin'){
+		$html = "<figure>";
+		$html .= wp_get_attachment_image($send_id, 'thumbnail', true);
+		$html .= "<figcaption>".$post->post_title."</figcaption>";
+		$html .= "</figure>";
+	}
+	return $html;
 }
 
 add_action('admin_menu', 'twikin_setup_addgame_menu');
@@ -256,5 +268,22 @@ function twikin_add_game(){
         print_r($response);
     }
     die();
+}
+
+add_action('admin_enqueue_scripts', 'twikin_add_wpmedia_menu');
+function twikin_add_wpmedia_menu(){
+    wp_enqueue_script('twikin-media-menu', plugins_url('js/wpmedia_menu.js', __FILE__), array('media-views'), false, true);
+}
+ 
+add_filter('media_view_strings', 'twikin_mediamenu_title', 10, 2);
+function twikin_mediamenu_title($strings,  $post){
+    $strings['createGameGalleryTitle'] = __('Créer une ludothèque', 'twikin');
+    $strings['editGameGalleryTitle'] = __('Éditer la ludothèque', 'twikin');
+    $strings['addToGameGallery'] = __('Ajouter à la ludothèque', 'twikin');
+    $strings['cancelGameGallery'] = __('&#8592; Annuler la ludothèque', 'twikin');
+    $strings['newGameGalleryButton'] = __('Créer une nouvelle ludothèque', 'twikin');
+    $strings['insertGameGalleryButton'] = __('insérer la ludothèque', 'twikin');
+    $strings['addToGameGalleryButton'] = __('ajouter à la ludothèque', 'twikin');
+    return $strings;
 }
 
