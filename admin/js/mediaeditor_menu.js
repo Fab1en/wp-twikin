@@ -131,7 +131,7 @@ wp.media.view.MediaFrame.Post = oldMediaFrame.extend({
 		                }
 						
 						var shortcode = wp.media.gallery.shortcode( state.get('library') ).string();
-						ed.execCommand('mceInsertContent', false, shortcode.replace('gallery', 'game'));
+						ed.execCommand('mceInsertContent', false, shortcode.replace('gallery', 'gamegallery'));
 
 						controller.reset();
 						controller.setState('upload');

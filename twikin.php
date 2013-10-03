@@ -12,6 +12,9 @@
 // création du type mime "game"
 require_once(sprintf("%s/models/game_mime_type.php", dirname(__FILE__)));
 
+// pour afficher la ludothèque côté front
+require_once(sprintf("%s/models/gamegallery_shortcode.php", dirname(__FILE__)));
+
 // hack permettant d'afficher l'image du jeux comme icône
 require_once(sprintf("%s/models/display_icon.php", dirname(__FILE__)));
 
