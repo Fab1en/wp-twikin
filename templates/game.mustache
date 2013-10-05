@@ -1,0 +1,17 @@
+<article class="ficheJeu">
+    
+    {{ #media_url }}
+        <img src="{{ media_url }}" />
+    {{ /media_url }}
+    <h2 class="title">{{ name }}</h2>
+    <dl class="infosJeu">
+        {{ #kind_name }}<dt>Type</dt> <dd>{{ kind_name }}</dd>{{ #kind_name }}
+        {{ #length }}<dt>Durée</dt> <dd>{{ length }}</dd>{{ /length }}
+        {{ #min_players }}<dt>Joueurs</dt> <dd>{{ min_players }} - {{ max_players }}</dd>{{ /min_players }}
+    </dl>
+    {{{ description }}}
+    
+</article>
+<div class="credits">Informations fournies par <a href="http://www.twikin.fr/jeux/{{ id }}" title="voir la fiche du jeu sur Twikin" alt="Twikin">
+    <img src="{{ logo }}"/>
+</a></div>
