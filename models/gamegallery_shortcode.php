@@ -72,10 +72,14 @@ function twikin_gamegallery_shortcode($attr) {
 		$attachments[$id]->image = wp_get_attachment_image($id, $size, true);
 		$attachments[$id]->permalink = get_permalink($id);
     }
+    $twikin = array(
+        'attachments' => array_values($attachments),
+        'logo' => plugins_url('img/Logo-Twikin-Blue.png', __FILE__)
+    );
 
     // afficher le template Mustache
     require_once(sprintf("%s/../vendor/mustache.php", dirname(__FILE__)));
     $mustache = new Mustache_Engine(array('loader' => new Mustache_Loader_FilesystemLoader(dirname(__FILE__).'/../templates/')));
     $tpl = $mustache->loadTemplate('gamegallery');
-    return $tpl->render(array('attachments' => array_values($attachments)));
+    return $tpl->render($twikin);
 }
