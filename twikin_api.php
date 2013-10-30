@@ -24,6 +24,7 @@ function twikin_api_call(){
                 if($existing->have_posts()){
                     $match = true;
                     $resp_json->results[$i]->wpid = $existing->post->ID;
+                    $resp_json->results[$i]->wp_edit = admin_url("post.php?post=".$existing->post->ID."&action=edit");
                 }
             }
             

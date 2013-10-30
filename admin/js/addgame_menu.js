@@ -21,7 +21,7 @@ jQuery(function($){
                         item +=     data.results[r].name;
                         item += '</a>';
                         item += '<button class="twikin-add-game" data-twikinid="'+data.results[r].id+'">Ajouter</button>';
-                        if(data.results[r].wpid) item += ' <a href="/wp-admin/post.php?post='+data.results[r].wpid+'&action=edit">présent dans la médiathèque ('+data.results[r].wpid+')</a>';
+                        if(data.results[r].wpid) item += ' <a href="'+data.results[r].wp_edit+'">présent dans la médiathèque ('+data.results[r].wpid+')</a>';
                         item += '</li>';
                         
                         $('#twikin-api-result').append(item);
